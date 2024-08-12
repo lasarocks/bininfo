@@ -9,7 +9,7 @@ if arq_cred:
         f_cred.write(arq_cred)
     dd = dbPersistente(path_file_auth=None, path_file_token='teste.json')
     dd.inst_google_auth.Refresh()
-    print(f'chego refresh status == {dd.inst_google_auth.credentials.access_token_expired}')
+    print(f'chego refresh status == {dd.inst_google_auth.credentials.access_token_expired}\n\n{os.listdir()}')
 else:
     print(f'sem arq_cred')
 
