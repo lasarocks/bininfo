@@ -25,7 +25,7 @@ from app.exceptions import errorHandler
 
 
 #Base.metadata.create_all(bind=engine)
-Base.metadata.create_all(bind=engine, checkfirst=True)
+Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
@@ -38,6 +38,15 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,
 )
+
+@app.on_event("startup")
+async def startup_event():
+    print('startandooo bicha')
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    print(f'tamoooo indo de offf')
 
 
 
