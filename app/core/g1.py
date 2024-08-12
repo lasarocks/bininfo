@@ -84,4 +84,3 @@ class dbPersistente(object):
             if os.path.isfile(path_file_save):
                 return True
         return False
-
