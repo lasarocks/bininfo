@@ -24,7 +24,7 @@ from app.api.base import api_router
 from app.exceptions import errorHandler
 
 
-#Base.metadata.create_all(bind=engine)
+#Base.metadata.create_all(bind=engine)#
 Base.metadata.create_all(bind=engine)
 
 
