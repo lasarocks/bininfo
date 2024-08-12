@@ -1,3 +1,20 @@
+import os
+from app.core.g1 import dbPersistente
+
+arq_cred = os.getenv("Gcredentials", None)
+
+if arq_cred:
+    print(arq_cred)
+    with open('teste.json', 'w') as f_cred:
+        f_cred.write(arq_cred)
+    dd = dbPersistente(path_file_auth=None, path_file_token='teste.json')
+    dd.inst_google_auth.Refresh()
+    print(f'chego refresh status == {dd.inst_google_auth.credentials.access_token_expired}')
+else:
+    print(f'sem arq_cred')
+
+
+
 from fastapi import(
     Depends,
     FastAPI,
@@ -17,6 +34,7 @@ from app.core.database import(
     Base
 )
 
+
 from app.api.base import api_router
 
 
@@ -24,7 +42,7 @@ from app.api.base import api_router
 from app.exceptions import errorHandler
 
 
-#Base.metadata.create_all(bind=engine)#
+#Base.metadata.create_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 
