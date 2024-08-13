@@ -35,6 +35,11 @@ from app.exceptions.general import(
 
 from app.core.boothpop import boooothPOP
 
+from app.core.block import(
+    bootLocker,
+    get_boot
+)
+
 
 
 router = APIRouter()
@@ -103,6 +108,7 @@ def has_bin(
 def lookup_bin(
     data_input: Union[CardRAW, CardAdd],
     response: Response,
+    inst_boot: bootLocker = Depends(get_boot),
     db: Session = Depends(get_db)
 ):
     if isinstance(data_input, CardRAW):
@@ -112,7 +118,7 @@ def lookup_bin(
     try:
         temp = binsPaypal1.has_card_bin(session=db, card_bin=data.card_number)
         if not temp:
-            temp_booth = boooothPOP(timeout=5)
+            temp_booth = inst_boot
             response_booth = temp_booth.check_bin(data.raw())
             if response_booth:
                 data_bin = response_booth.get_extra()
