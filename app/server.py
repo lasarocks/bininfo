@@ -8,8 +8,17 @@ if arq_cred:
     with open('teste.json', 'w') as f_cred:
         f_cred.write(arq_cred)
     dd = dbPersistente(path_file_auth=None, path_file_token='teste.json')
-    dd.inst_google_auth.Refresh()
-    print(f'chego refresh status == {dd.inst_google_auth.credentials.access_token_expired}\n\n{os.listdir()}')
+    arqs_rmt = dd.list()
+    if arqs_rmt:
+        arq_db = arqs_rmt[0]
+        if os.path.isfile(arq_db['title']):
+            print(f'deletando antigo')
+            av = os.remove(arq_db['title'])
+        arq_db.GetContentFile(arq_db['title'])
+        print(f'baixando novo')
+        if os.path.isfile(arq_db['title']):
+            print(f'novo OK')
+    print(f'chego refresh status == {dd.inst_google_auth.credentials.access_token_expired}')
 else:
     print(f'sem arq_cred')
 
@@ -65,6 +74,9 @@ async def startup_event():
 @app.on_event("shutdown")
 def shutdown_event():
     print(f'tamoooo indo de offf')
+    print(f'vamo tenta upar...')
+    dd.upload(arq_db['title'])
+    print(f'acho que upou....')
 
 
 
