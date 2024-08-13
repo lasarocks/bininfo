@@ -26,6 +26,18 @@ class dbPersistente(object):
             print(f'dbPersistente.do_login exp --- {err}')
         else:
             self.inst_google_drive = drive
+    def validate(self):
+        if not self.inst_google_auth.credentials or not self.inst_google_drive:
+            if not self.inst_google_drive:
+                print(f'no googledrive instance')
+            else:
+                print(f'no credentials loaded')
+            return False
+        if self.inst_google_auth.credentials.access_token_expired:
+            self.inst_google_auth.Refresh()
+            return self.validate()
+        else:
+            return True
     def prepare(self):
         if self.path_file_token is None:
             try:
@@ -43,16 +55,24 @@ class dbPersistente(object):
                 print(f'dbPersistente.prepare exp --- {err}')
             else:
                 self.do_login(code_google=None)
-    def list(self):
-        if not self.inst_google_drive:
-            print(f'sem GoogleDrive')
+    def list(self, query={}):
+        if not self.validate():
             return False
-        file_list = self.inst_google_drive.ListFile({'q': "'root' in parents"}).GetList()
-        for file1 in file_list:
-            print('title: %s, id: %s' % (file1['title'], file1['id']))
+        if not query:
+            query.update(
+                {
+                    'q': "'root' in parents"
+                }
+            )
+        try:
+            response = self.inst_google_drive.ListFile(query).GetList()
+        except Exception as err:
+            print(f'dbPersistente.list exp --- {query} --- {err}')
+        else:
+            return response
+        return False
     def upload(self, path_file):
-        if not self.inst_google_drive:
-            print(f'sem GoogleDrive')
+        if not self.validate():
             return False
         if not os.path.isfile(path_file):
             print(f'no file {path_file}')
