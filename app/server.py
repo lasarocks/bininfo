@@ -2,6 +2,7 @@ import os
 from app.core.g1 import dbPersistente
 
 arq_cred = os.getenv("Gcredentials", None)
+dd = None
 
 if arq_cred:
     print(arq_cred)
@@ -23,7 +24,7 @@ else:
     print(f'sem arq_cred')
 
 
-
+import urllib.parse
 from fastapi import(
     Depends,
     FastAPI,
@@ -40,7 +41,8 @@ from starlette.responses import RedirectResponse
 from app.core.database import(
     SessionLocal,
     engine,
-    Base
+    Base,
+    SQLALCHEMY_DATABASE_URL
 )
 
 
@@ -56,7 +58,8 @@ Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
-
+app.path_database = os.path.abspath(urllib.parse.urlparse(SQLALCHEMY_DATABASE_URL).path[1:])
+app.inst_gdrive = dd
 
 app.add_middleware(
     CORSMiddleware,
