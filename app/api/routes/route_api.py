@@ -5,7 +5,8 @@ from fastapi import(
     Depends,
     Response,
     status,
-    APIRouter
+    APIRouter,
+    Request
 )
 from fastapi.responses import JSONResponse
 
@@ -105,25 +106,39 @@ def add_cc(
 
 
 
-# @router.get(
-#     '/find/cc/{ccnum}',
-#     status_code=status.HTTP_200_OK
-# )
-# def has_cc(
-#     ccnum: str,
-#     db: Session = Depends(get_db)
-# ):
-#     temp = TableCC.has_cc(session=db, tx_cc=ccnum)
-#     if temp:
-#         return {
-#             "data": temp
-#         }
-#         return temp
-#     else:
-#         return {
-#             "error": True,
-#             "message": "No results"
-#         }
+@router.get(
+    '/teste',
+    status_code=status.HTTP_200_OK
+)
+def teste(
+    request: Request
+):
+    a = request.app.inst_gdrive
+    print(f'caimo no teste ---- valor a: \n{a}\n\nFIM')
+    return {
+        'gdrive': a
+    }
+
+
+
+@router.get(
+    '/upload_db',
+    status_code=status.HTTP_200_OK
+)
+def upload_db(
+    request: Request
+):
+    drive = request.app.inst_gdrive
+    path_db = request.app.path_database
+    temp_reponse_upload = drive.upload(path_db)
+    if temp_reponse_upload:
+        return {
+            'error': False,
+            'data': temp_reponse_upload
+        }
+    return {
+        'error': 'provavelmente'
+    }
 
 
 
