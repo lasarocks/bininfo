@@ -64,7 +64,7 @@ class quickDbFreeze(object):
             print(f'updando remote {name_db_new} --- {DB_PATH}')
             response = self.inst_db.upload(path_file=DB_PATH, name_file=name_db_new)
             if response:
-                return True
+                return response
         return False
 
 
