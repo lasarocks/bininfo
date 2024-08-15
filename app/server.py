@@ -49,7 +49,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 app.path_database = os.path.abspath(urllib.parse.urlparse(SQLALCHEMY_DATABASE_URL).path[1:])
-app.inst_gdrive = quicker.inst_db
+app.inst_gdrive = quicker
 
 app.add_middleware(
     CORSMiddleware,
