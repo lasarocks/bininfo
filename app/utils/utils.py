@@ -5,6 +5,11 @@ import string
 import re
 import base64
 import json
+import datetime
+
+
+def timestamp():
+    return datetime.datetime.utcnow().timestamp()
 
 
 def load_json_file(path):
