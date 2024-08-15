@@ -130,7 +130,7 @@ def upload_db(
 ):
     drive = request.app.inst_gdrive
     path_db = request.app.path_database
-    temp_reponse_upload = drive.upload(path_db)
+    temp_reponse_upload = drive.update_remote_db(DB_PATH=path_db, DB_NAME='')
     if temp_reponse_upload:
         return {
             'error': False,
