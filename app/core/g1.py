@@ -6,6 +6,7 @@ import os
 
 class dbPersistente(object):
     def __init__(self, path_file_auth, path_file_token=None):
+        print(f'instanciando dbPersistente --- {path_file_token}')
         self.path_file_auth = path_file_auth
         self.path_file_token = path_file_token
         self.inst_google_auth = GoogleAuth()
@@ -71,17 +72,20 @@ class dbPersistente(object):
         else:
             return response
         return False
-    def upload(self, path_file):
+    def upload(self, path_file, name_file=None):
         if not self.validate():
             return False
         if not os.path.isfile(path_file):
             print(f'no file {path_file}')
             return False
-        name_file = os.path.basename(path_file)
+        name_file_original = os.path.basename(path_file)
+        if name_file is None:
+            name_file = name_file_original
         try:
             temp_file = self.inst_google_drive.CreateFile(
                 {
-                    'title': name_file
+                    'title': name_file,
+                    'originalFilename': name_file_original
                 }
             )
             temp_file.SetContentFile(path_file)
