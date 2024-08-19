@@ -15,30 +15,30 @@ from app.utils.cchelper import(
 )
 
 
-class CheckCC(baseSchema):
-    ccnum: str
-    ccmonth: str
-    ccyear: str
-    cvv: str
-    def raw(self):
-        return f'{self.ccnum}|{self.ccmonth}|{self.ccyear}|{self.cvv}'
+# class CheckCC(baseSchema):
+#     ccnum: str
+#     ccmonth: str
+#     ccyear: str
+#     cvv: str
+#     def raw(self):
+#         return f'{self.ccnum}|{self.ccmonth}|{self.ccyear}|{self.cvv}'
 
 
 
 
 
 
-class CheckCCRAW(baseSchema):
-    ccraw: str
+# class CheckCCRAW(baseSchema):
+#     ccraw: str
 
 
 
 
 
-class ccrowne(baseSchema):
-    ccraw: str
-    def raw(self):
-        return formatar_cc(self.ccraw)
+# class ccrowne(baseSchema):
+#     ccraw: str
+#     def raw(self):
+#         return formatar_cc(self.ccraw)
 
 
 
@@ -116,39 +116,39 @@ class CardBinAddResponse(CardBinAdd):
 
 
 
-class CardAdd(baseSchema):
-    card_bin: Optional[str] = None
-    card_number: str
-    card_exp_month: str
-    card_exp_year: str
-    card_cvv: str
-    last_status: Optional[str] = None
-    last_gateway_id: Optional[str] = None
-    source: Optional[str] = None
-    def raw(self):
-        return f'{self.card_number}|{self.card_exp_month}|{self.card_exp_year}|{self.card_cvv}'
+# class CardAdd(baseSchema):
+#     card_bin: Optional[str] = None
+#     card_number: str
+#     card_exp_month: str
+#     card_exp_year: str
+#     card_cvv: str
+#     last_status: Optional[str] = None
+#     last_gateway_id: Optional[str] = None
+#     source: Optional[str] = None
+#     def raw(self):
+#         return f'{self.card_number}|{self.card_exp_month}|{self.card_exp_year}|{self.card_cvv}'
 
 
 
-class CardAddResponse(CardAdd):
-    id: UUID
-    date_created: datetime
+# class CardAddResponse(CardAdd):
+#     id: UUID
+#     date_created: datetime
 
 
 
-class CardRAW(baseSchema):
-    ccraw: str
-    def parse(self):
-        cc_data = formatar_cc(self.ccraw)
-        if cc_data:
-            return CardAdd(**{
-                'card_bin': cc_data.get('cc')[0:6],
-                'card_number': cc_data.get('cc'),
-                'card_exp_month': cc_data.get('month'),
-                'card_exp_year': cc_data.get('year'),
-                'card_cvv': cc_data.get('cvv'),
-            })
-        return False
+# class CardRAW(baseSchema):
+#     ccraw: str
+#     def parse(self):
+#         cc_data = formatar_cc(self.ccraw)
+#         if cc_data:
+#             return CardAdd(**{
+#                 'card_bin': cc_data.get('cc')[0:6],
+#                 'card_number': cc_data.get('cc'),
+#                 'card_exp_month': cc_data.get('month'),
+#                 'card_exp_year': cc_data.get('year'),
+#                 'card_cvv': cc_data.get('cvv'),
+#             })
+#         return False
 
 
 
@@ -175,62 +175,69 @@ class CardBinProcessoutAddResponse(CardBinProcessoutAdd):
 
 
 
-class GatewayAdd(baseSchema):
-    description: str
-    key: str
-    name: str
-    accepted_brands: Optional[str] = None
-    status: Optional[bool] = None
+# class GatewayAdd(baseSchema):
+#     description: str
+#     key: str
+#     name: str
+#     accepted_brands: Optional[str] = None
+#     status: Optional[bool] = None
 
 
 
 
-class GatewayAddResponse(GatewayAdd):
-    id: UUID
-    date_created: datetime
+# class GatewayAddResponse(GatewayAdd):
+#     id: UUID
+#     date_created: datetime
 
 
 
 
 
-class TransactionBase(baseSchema):
-    amount: Optional[str] = None
-    currency: Optional[str] = None
-    status: Optional[str] = None
-    response: Optional[str] = None
-    response_raw: Optional[str] = None
+# class TransactionBase(baseSchema):
+#     amount: Optional[str] = None
+#     currency: Optional[str] = None
+#     status: Optional[str] = None
+#     response: Optional[str] = None
+#     response_raw: Optional[str] = None
 
 
 
-class TransactionAdd(TransactionBase):
-    id_gateway: str
-    id_card: str
+# class TransactionAdd(TransactionBase):
+#     id_gateway: str
+#     id_card: str
 
 
-
-
-class TransactionAddResponse(TransactionBase):
-    id: UUID
-    id_gateway: UUID
-    id_card: UUID
-    date_created: datetime
-
-
-class TransactionRT(TransactionAddResponse):
-    Gateways: GatewayAddResponse
-
-
-class TransactionsResponse(baseSchema):
-    data: List[TransactionRT]
+# class TransactionCreate(baseSchema):
+#     id_gateway: str
+#     id_card: str
+#     def add(self):
+#         return TransactionAdd(**{'id_gateway': self.id_gateway,'id_card': self.id_card})
 
 
 
 
-class TransactionRT2(TransactionAddResponse):
-    Gateways: GatewayAddResponse
-    cards: CardAddResponse
+# class TransactionAddResponse(TransactionBase):
+#     id: UUID
+#     id_gateway: UUID
+#     id_card: UUID
+#     date_created: datetime
 
 
-class TransactionsResponse2(baseSchema):
-    data: List[TransactionRT2]
+# class TransactionRT(TransactionAddResponse):
+#     Gateways: GatewayAddResponse
+
+
+# class TransactionsResponse(baseSchema):
+#     data: List[TransactionRT]
+
+
+
+
+# class TransactionRT2(TransactionAddResponse):
+#     Gateways: GatewayAddResponse
+#     cards: CardAddResponse
+
+
+# class TransactionsResponse2(baseSchema):
+#     data: List[TransactionRT2]
 
