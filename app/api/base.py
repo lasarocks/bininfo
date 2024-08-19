@@ -1,24 +1,19 @@
 from fastapi import APIRouter
-from app.api.routes import route_api
-from app.api.routes import route_bin_checkout
-from app.api.routes import route_bin_paypal1
-from app.api.routes import route_bin_processout
-from app.api.routes import route_bin_endurance
-from app.api.routes import route_card
+
+
+from app.api.routes import route_transactions
+from app.api.routes import route_gateways
+from app.api.routes import route_cards
+from app.api.routes import route_bin
 
 
 api_router = APIRouter()
-api_router.include_router(route_bin_checkout.router, prefix="/binlookup/checkout", tags=["binlookup"])
-
-api_router.include_router(route_bin_paypal1.router, prefix="/binlookup/paypal", tags=["binlookup"])
-
-api_router.include_router(route_bin_processout.router, prefix="/binlookup/processout", tags=["binlookup"])
 
 
-api_router.include_router(route_bin_endurance.router, prefix="/binlookup/endurance", tags=["binlookup"])
+api_router.include_router(route_transactions.router, prefix="/transactions", tags=["transactions"])
 
+api_router.include_router(route_gateways.router, prefix="/gateways", tags=["gateways"])
 
-api_router.include_router(route_card.router, prefix="/cards", tags=["cards"])
+api_router.include_router(route_cards.router, prefix="/cards", tags=["cards"])
 
-api_router.include_router(route_api.router, prefix="/title", tags=["title"])
-
+api_router.include_router(route_bin.router, prefix="/bin", tags=["bin"])
