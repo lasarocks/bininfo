@@ -22,7 +22,7 @@ from typing import List, Type, Union
 
 from sqlalchemy.orm import relationship
 
-from app.core.database import Base, engine, SessionLocal         
+from app.core.database import Base, engine, SessionLocal
 from datetime import datetime
 
 
@@ -46,14 +46,23 @@ from app.models.schemas.schsystem import(
     CardBinCheckoutAddResponse,
     CardBinPaypal1Add,
     CardBinAdd,
-    CardAdd,
+    #CardAdd,
     CardBinProcessoutAdd,
-    GatewayAdd,
-    GatewayAddResponse,
-    TransactionAdd,
-    TransactionAddResponse,
+    #GatewayAdd,
+    #GatewayAddResponse,
+    #TransactionAdd,
+    #TransactionAddResponse,
     CardBinEnduranceAdd,
     CardBinEnduranceAddResponse
+)
+
+
+
+from app.models.schemas.scards import(
+    CardAdd,
+    CardAddResponse,
+    CardRAW,
+    CardsListAllResponse
 )
 
 
@@ -299,223 +308,223 @@ class binsProcessout(CRUUIDBase, Base):
 
 
 
-class binners(CRUUIDBase, Base):
-    __tablename__ = "binners"
-    id = Column(String(36), primary_key=True)
-    card_bin = Column(String(255))
-    card_bin_extra = Column(String(255))
-    card_brand = Column(String(255))
-    card_type = Column(String(255))
-    card_level = Column(String(255))
-    card_country = Column(String(255))
-    card_bank = Column(String(255))
-    date_created = Column(DateTime, default=datetime.utcnow())
+# class binners(CRUUIDBase, Base):
+#     __tablename__ = "binners"
+#     id = Column(String(36), primary_key=True)
+#     card_bin = Column(String(255))
+#     card_bin_extra = Column(String(255))
+#     card_brand = Column(String(255))
+#     card_type = Column(String(255))
+#     card_level = Column(String(255))
+#     card_country = Column(String(255))
+#     card_bank = Column(String(255))
+#     date_created = Column(DateTime, default=datetime.utcnow())
 
-    @classmethod
-    def create(
-        cls: Type[Base],
-        session: Session,
-        card_bin_data: CardBinAdd
-    ):
-        response_check_bin = binners.has_card_bin(session=session, card_bin=card_bin_data.card_bin)
-        if not response_check_bin:
-            return super().create(session, card_bin_data.dict())
-        return response_check_bin
+#     @classmethod
+#     def create(
+#         cls: Type[Base],
+#         session: Session,
+#         card_bin_data: CardBinAdd
+#     ):
+#         response_check_bin = binners.has_card_bin(session=session, card_bin=card_bin_data.card_bin)
+#         if not response_check_bin:
+#             return super().create(session, card_bin_data.dict())
+#         return response_check_bin
     
-    @classmethod
-    def has_card_bin(
-        cls: Type[Base],
-        session: Session,
-        card_bin: str
-    ):
-        try:
-            return session.query(
-                cls
-            ).filter_by(
-                card_bin=card_bin
-            ).one()
-        except Exception as err:
-            print(f'binners.has_card_bin exp -- {err}')
-        return False
+#     @classmethod
+#     def has_card_bin(
+#         cls: Type[Base],
+#         session: Session,
+#         card_bin: str
+#     ):
+#         try:
+#             return session.query(
+#                 cls
+#             ).filter_by(
+#                 card_bin=card_bin
+#             ).one()
+#         except Exception as err:
+#             print(f'binners.has_card_bin exp -- {err}')
+#         return False
 
 
 
 
 
-class cards(CRUUIDBase, Base):
-    __tablename__ = "cards"
-    id = Column(String(36), primary_key=True)
-    card_bin = Column(String(255))
-    card_number = Column(String(255))
-    card_exp_month = Column(String(255))
-    card_exp_year = Column(String(255))
-    card_cvv = Column(String(255))
-    last_status = Column(String(255))
-    last_gateway_id = Column(String(36), ForeignKey('Gateways.id'))
-    source = Column(String(255))
-    transactions = relationship('Transactions', backref='cards')
-    date_created = Column(DateTime, default=datetime.utcnow())
+# class cards(CRUUIDBase, Base):
+#     __tablename__ = "cards"
+#     id = Column(String(36), primary_key=True)
+#     card_bin = Column(String(255))
+#     card_number = Column(String(255))
+#     card_exp_month = Column(String(255))
+#     card_exp_year = Column(String(255))
+#     card_cvv = Column(String(255))
+#     last_status = Column(String(255))
+#     last_gateway_id = Column(String(36), ForeignKey('Gateways.id'))
+#     source = Column(String(255))
+#     transactions = relationship('Transactions', backref='cards')
+#     date_created = Column(DateTime, default=datetime.utcnow())
 
-    @classmethod
-    def create(
-        cls: Type[Base],
-        session: Session,
-        card_data: CardAdd,
-        recheck='0'
-    ):
-        response_check_cc = cards.has_card(session=session, card_data=card_data)
-        if not response_check_cc or recheck == '1':
-            if card_data.card_bin is None:
-                card_data.card_bin = card_data.card_number[0:6]
-            return super().create(session, card_data.dict())
-        return response_check_cc
+#     @classmethod
+#     def create(
+#         cls: Type[Base],
+#         session: Session,
+#         card_data: CardAdd,
+#         recheck='0'
+#     ):
+#         response_check_cc = cards.find_by_card(session=session, card_data=card_data)
+#         if not response_check_cc:
+#             if card_data.card_bin is None:
+#                 card_data.card_bin = card_data.card_number[0:6]
+#             return super().create(session, card_data.dict())
+#         return response_check_cc
 
-    @classmethod
-    def has_card(
-        cls: Type[Base],
-        session: Session,
-        card_data: CardAdd
-    ):
-        try:
-            return session.query(
-                cls
-            ).filter(
-                #cards.card_bin == card_data.card_bin,
-                cards.card_number == card_data.card_number,
-                cards.card_exp_month == card_data.card_exp_month,
-                cards.card_exp_year == card_data.card_exp_year,
-                cards.card_cvv == card_data.card_cvv
-            ).all()
-        except Exception as err:
-            print(f'cards.has_card exp -- {err}')
-        return False
+#     @classmethod
+#     def has_card(
+#         cls: Type[Base],
+#         session: Session,
+#         card_data: CardAdd
+#     ):
+#         try:
+#             return session.query(
+#                 cls
+#             ).filter(
+#                 #cards.card_bin == card_data.card_bin,
+#                 cards.card_number == card_data.card_number,
+#                 cards.card_exp_month == card_data.card_exp_month,
+#                 cards.card_exp_year == card_data.card_exp_year,
+#                 cards.card_cvv == card_data.card_cvv
+#             ).all()
+#         except Exception as err:
+#             print(f'cards.has_card exp -- {err}')
+#         return False
 
-    @classmethod
-    def find_by_card(
-        cls: Type[Base],
-        session: Session,
-        card_data: CardAdd
-    ):
-        try:
-            return session.query(
-                cls
-            ).filter(
-                #cards.card_bin == card_data.card_bin,
-                cards.card_number == card_data.card_number,
-                cards.card_exp_month == card_data.card_exp_month,
-                cards.card_exp_year == card_data.card_exp_year,
-                cards.card_cvv == card_data.card_cvv
-            ).one()
-        except Exception as err:
-            print(f'cards.find_by_card exp -- {err}')
-        return False
-    
-
-
-
-class Gateways(CRUUIDBase, Base):
-    __tablename__ = "Gateways"
-    id = Column(String(36), primary_key=True)
-    description = Column(String(255))
-    key = Column(String(255), unique=True)
-    name = Column(String())
-    accepted_brands = Column(String())
-    status = Column(Boolean)
-    date_created = Column(DateTime, default=datetime.utcnow())
-    transactions = relationship('Transactions', backref='Gateways')
-
-    @classmethod
-    def create(
-        cls: Type[Base],
-        session: Session,
-        data: GatewayAdd
-    ):
-        try:
-            return super().create(session, data=data.dict())
-        except Exception as err:
-            print(f'Gateways.create exp --- {err}')
-        return False
-
-    @classmethod
-    def after_create_table(cls, session):
-        _system_gateway1 = GatewayAdd(
-            description = 'OracleCloud',
-            key='ORACLE',
-            name='oracleTryOut',
-            status=True
-        )
-        Gateways.create(session=session, data=_system_gateway1)
-
-    @classmethod
-    def find_by_key(
-        cls: Type[Base],
-        session: Session,
-        key: str
-    ):
-        try:
-            return session.query(cls).filter_by(key=key).first()
-        except Exception as err:
-            raise InternalException(
-                message=f'Internal Error find_by_key KEY --- {key} --- {err}'
-            )
-        return False
+#     @classmethod
+#     def find_by_card(
+#         cls: Type[Base],
+#         session: Session,
+#         card_data: CardAdd
+#     ):
+#         try:
+#             return session.query(
+#                 cls
+#             ).filter(
+#                 #cards.card_bin == card_data.card_bin,
+#                 cards.card_number == card_data.card_number,
+#                 cards.card_exp_month == card_data.card_exp_month,
+#                 cards.card_exp_year == card_data.card_exp_year,
+#                 cards.card_cvv == card_data.card_cvv
+#             ).one()
+#         except Exception as err:
+#             print(f'cards.find_by_card exp -- {err}')
+#         return False
     
 
 
 
+# class Gateways(CRUUIDBase, Base):
+#     __tablename__ = "Gateways"
+#     id = Column(String(36), primary_key=True)
+#     description = Column(String(255))
+#     key = Column(String(255), unique=True)
+#     name = Column(String())
+#     accepted_brands = Column(String())
+#     status = Column(Boolean)
+#     date_created = Column(DateTime, default=datetime.utcnow())
+#     transactions = relationship('Transactions', backref='Gateways')
 
-class Transactions(CRUUIDBase, Base):
-    __tablename__ = "Transactions"
-    id = Column(String(36), primary_key=True)
-    id_gateway = Column(String(36), ForeignKey('Gateways.id'))
-    id_card = Column(String(36), ForeignKey('cards.id'))
-    #id_card = Column(String(36), nullable=False)
-    #id_gateway = Column(String(36), nullable=False)
-    amount = Column(String(255))
-    currency = Column(String(255))
-    status = Column(String(255))
-    response = Column(String(255))
-    response_raw = Column(String())
-    date_created = Column(DateTime, default=datetime.utcnow())
+#     @classmethod
+#     def create(
+#         cls: Type[Base],
+#         session: Session,
+#         data: GatewayAdd
+#     ):
+#         try:
+#             return super().create(session, data=data.dict())
+#         except Exception as err:
+#             print(f'Gateways.create exp --- {err}')
+#         return False
+
+#     @classmethod
+#     def after_create_table2(cls, session):
+#         _system_gateway1 = GatewayAdd(
+#             description = 'OracleCloud',
+#             key='ORACLE',
+#             name='oracleTryOut',
+#             status=True
+#         )
+#         Gateways.create(session=session, data=_system_gateway1)
+
+#     @classmethod
+#     def find_by_key(
+#         cls: Type[Base],
+#         session: Session,
+#         key: str
+#     ):
+#         try:
+#             return session.query(cls).filter_by(key=key).first()
+#         except Exception as err:
+#             raise InternalException(
+#                 message=f'Internal Error find_by_key KEY --- {key} --- {err}'
+#             )
+#         return False
+    
 
 
-    @classmethod
-    def create(
-        cls: Type[Base],
-        session: Session,
-        data: TransactionAdd
-    ):
-        try:
-            return super().create(session, data=data.dict())
-        except Exception as err:
-            print(f'Transactions.create exp --- {err}')
-        return False
 
-    @classmethod
-    def find_by_card_id(
-        cls: Type[Base],
-        session: Session,
-        id_card: str
-    ):
-        try:
-            return session.query(cls).filter_by(id_card=id_card).all()
-        except Exception as err:
-            raise InternalException(
-                message=f'Internal Error find_by_card_id id_card --- {id_card} --- {err}'
-            )
-        return False
 
-    @classmethod
-    def list_transactions_limit(
-        cls: Type[Base],
-        session: Session,
-        offset: int = 0,
-        limit: int = 15
-    ):
-        try:
-            return session.query(cls).offset(offset).limit(limit).all()
-        except Exception as err:
-            raise InternalException(
-                message=f'Internal Error list_transactions_limit offset --- {offset} --- limit --- {limit} --- {err}'
-            )
-        return False
+# class Transactions(CRUUIDBase, Base):
+#     __tablename__ = "Transactions"
+#     id = Column(String(36), primary_key=True)
+#     id_gateway = Column(String(36), ForeignKey('Gateways.id'))
+#     id_card = Column(String(36), ForeignKey('cards.id'))
+#     #id_card = Column(String(36), nullable=False)
+#     #id_gateway = Column(String(36), nullable=False)
+#     amount = Column(String(255))
+#     currency = Column(String(255))
+#     status = Column(String(255))
+#     response = Column(String(255))
+#     response_raw = Column(String())
+#     date_created = Column(DateTime, default=datetime.utcnow())
+
+
+#     @classmethod
+#     def create(
+#         cls: Type[Base],
+#         session: Session,
+#         data: TransactionAdd
+#     ):
+#         try:
+#             return super().create(session, data=data.dict())
+#         except Exception as err:
+#             print(f'Transactions.create exp --- {err}')
+#         return False
+
+#     @classmethod
+#     def find_by_card_id(
+#         cls: Type[Base],
+#         session: Session,
+#         id_card: str
+#     ):
+#         try:
+#             return session.query(cls).filter_by(id_card=id_card).all()
+#         except Exception as err:
+#             raise InternalException(
+#                 message=f'Internal Error find_by_card_id id_card --- {id_card} --- {err}'
+#             )
+#         return False
+
+#     @classmethod
+#     def list_transactions_limit(
+#         cls: Type[Base],
+#         session: Session,
+#         offset: int = 0,
+#         limit: int = 15
+#     ):
+#         try:
+#             return session.query(cls).offset(offset).limit(limit).all()
+#         except Exception as err:
+#             raise InternalException(
+#                 message=f'Internal Error list_transactions_limit offset --- {offset} --- limit --- {limit} --- {err}'
+#             )
+#         return False
