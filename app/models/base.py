@@ -29,6 +29,8 @@ from app.exceptions.general import(
 
 
 
+
+
 class CRUUIDBase:
     @classmethod
     def create(
@@ -157,3 +159,24 @@ class CRUUIDBase:
         return False
 
 
+
+class CRUUIDSerial(CRUUIDBase):
+    @classmethod
+    def create(
+        cls: Type[Base],
+        session: Session,
+        data: dict
+    ) -> Base:
+        try:
+            obj = cls(**data)
+            #obj.id = str(uuid.uuid4())
+            obj.date_created = datetime.utcnow()
+            session.add(obj)
+            session.commit()
+            session.refresh(obj)
+            return obj
+        except Exception as err:
+            raise InvalidParameters(
+                message=f'CRUUIDSerial.create exp --- {err}'
+            )
+        return False
