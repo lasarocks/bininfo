@@ -1,0 +1,333 @@
+
+
+from app.core.checkoutBinlookup import checkoutBinlookup
+
+from app.core.enduranceBinlookup import enduranceBinlookup
+
+from app.core.boothpop import boooothPOP
+
+
+
+from app.core.processoutBinlookup import processoutBinlookup
+
+from app.core.braintreeWPmaio import maiomenos
+from app.core.sf import saferpay
+
+import requests
+import json
+
+
+
+class mng(object):
+    def __init__(self, cb_instance, eb_instance, pb_instance, bb_instance, cvv_instance):
+        self.cb_instance = cb_instance
+        self.eb_instance = eb_instance
+        self.pb_instance = pb_instance
+        self.bb_instance = bb_instance
+        self.cvv_instance = cvv_instance
+        self.last_check = None
+    def _ccb(self, cc):
+        temp = self.cb_instance.check_bin(cc)
+        if temp:
+            return self.cb_instance.get_request('check_bin')
+    def _ceb(self, cc):
+        return self.eb_instance.check_bin(cc)
+    def _cpb(self, cc):
+        temp = self.pb_instance.check_bin(cc)
+        if temp:
+            return self.pb_instance.get_request('check_bin')
+    def _cbb(self, cc):
+        return self.bb_instance.check_bin(cc)
+    def _ccvv(self, cc):
+        return self.cvv_instance.check(cc)
+    def check(self, cc):
+        cb = self._ccb(cc=cc)
+        if cb:
+            print(f'checkoutBinlookup\n{cb.get_extra().get("api_response", {})}')
+        eb = self._ceb(cc=cc)
+        if eb:
+            print(f'enduranceBinlookup\n{eb}')
+        pb = self._cpb(cc=cc)
+        if pb:
+            print(f'processout\n{pb.get_extra().get("api_response", {})}')
+        bb = self._cbb(cc=cc)
+        if bb:
+            print(bb.get_extra())
+        cvv = self._ccvv(cc=cc)
+        if cvv:
+            print(cvv)
+        self.last_check = cb,eb,pb,bb,cvv
+        return self.last_check
+    def _deal_paypal(self, content):
+        networks = content.get('card_networks', None)
+        products = content.get('product_types', None)
+        jnetworks, jproducts = [], []
+        if networks:
+            jnetworks = json.loads(networks.replace("'", '"'))
+        if products:
+            jproducts = json.loads(products.replace("'", '"'))
+        pp_cc_type = content.get('card_type', '')
+        pp_cc_subtype = None
+        if pp_cc_type == 'PREPAID':
+            pp_cc_type = 'DEBIT'
+            pp_cc_subtype = 'PREPAID'
+        pp_cc_cn = content.get('card_country', '')
+        pp_cc_issuer = content.get('card_bank', '')
+        pp_cc_bin = content.get('card_bin', '')
+        return {
+            'source': 'paypal',
+            'card_bin': pp_cc_bin,
+            'issuer': pp_cc_issuer.upper() if pp_cc_issuer else None,
+            'country': pp_cc_cn,
+            'card_type': pp_cc_type,
+            'card_category': None,
+            'product_category': pp_cc_subtype,
+            'network': jnetworks,
+            'product': jproducts
+        }
+    def _deal_checkout(self, content):
+        pp_cc_type = content.get('card_type', '')
+        pp_cc_subtype = None
+        if pp_cc_type == 'PREPAID':
+            pp_cc_type = 'DEBIT'
+            pp_cc_subtype = 'PREPAID'
+        if pp_cc_subtype is None:
+            pp_cc_subtype = content.get('product_type', '')
+        pp_cc_cn = content.get('card_country', '')
+        pp_cc_issuer = content.get('card_bank', '')
+        pp_cc_bin = content.get('card_bin', '')
+        pp_cc_category = content.get('card_category', '')
+        return {
+            'source': 'checkoutBinlookup',
+            'card_bin': pp_cc_bin,
+            'issuer': pp_cc_issuer,
+            'country': pp_cc_cn,
+            'card_type': pp_cc_type,
+            'card_category': pp_cc_category,
+            'product_category': pp_cc_subtype.upper(),
+            'network': None,
+            'product': None
+        }
+    def _deal_endurance(self, content):
+        pp_cc_type = content.get('card_type', '')
+        pp_cc_subtype = content.get('card_category', '')
+        pp_cc_cn = content.get('card_country', '')
+        pp_cc_issuer = content.get('card_bank', '')
+        pp_cc_bin = content.get('card_bin', '')
+        return {
+            'source': 'enduranceBinlookup',
+            'card_bin': pp_cc_bin,
+            'issuer': pp_cc_issuer,
+            'country': pp_cc_cn,
+            'card_type': pp_cc_type,
+            'card_category': None,
+            'product_category': pp_cc_subtype,
+            'network': None,
+            'product': None
+        }
+    def _deal_processout(self, content):
+        pp_cc_type = content.get('card_type', '').upper()
+        pp_cc_subtype = None
+        if pp_cc_type == 'PREPAID':
+            pp_cc_type = 'DEBIT'
+            pp_cc_subtype = 'PREPAID'
+        if pp_cc_subtype is None:
+            pp_cc_subtype = content.get('product_type', '').upper()
+        pp_cc_cn = content.get('card_country', '').upper()
+        pp_cc_issuer = content.get('card_bank', '').upper()
+        pp_cc_bin = content.get('card_bin', '').upper()
+        pp_cc_category = content.get('card_category', '').upper()
+        return {
+            'source': 'processoutBinlookup',
+            'card_bin': pp_cc_bin,
+            'issuer': pp_cc_issuer,
+            'country': pp_cc_cn,
+            'card_type': pp_cc_type,
+            'card_category': pp_cc_category,
+            'product_category': pp_cc_subtype,
+            'network': None,
+            'product': None
+        }
+    def _deal_cvv(self, content):
+        cvv_required = content.get('isCvcMandatory', None)
+        return {
+            'source': 'cvv',
+            'cvc_mandatory': cvv_required
+        }
+    def model(self):
+        responses = self.last_check
+        if not responses:
+            return False
+        if len(responses) == 5:
+            cb,eb,pb,bb,cvv = responses
+            cbd = cb.get_extra().get('api_response', {})
+            ebd = eb
+            pbd = pb.get_extra().get('api_response', {})
+            bbd = bb.get_extra()
+            parsed_bb = self._deal_paypal(content=bbd)
+            parsed_cb = self._deal_checkout(content=cbd)
+            parsed_eb = self._deal_endurance(content=ebd)
+            parsed_pb = self._deal_processout(content=pbd)
+            parsed_cvv = self._deal_cvv(content=cvv)
+            return parsed_bb, parsed_cb, parsed_pb, parsed_eb, parsed_cvv
+
+
+
+
+
+
+
+def gmodel(model):
+    issuer = ''
+    card_bin = ''
+    country = ''
+    card_type = ''
+    card_category = ''
+    product_category = ''
+    networks = None
+    products = None
+    cvc_mandatory = None
+    for i in model:
+        if i.get('source', '') == 'cvv':
+            cvc_mandatory = i.get('cvc_mandatory', None)
+            continue
+        if i.get('source', '') == 'paypal':
+            issuer = i.get('issuer', None)
+            country = i.get('country', None)
+            card_type = i.get('card_type', None)
+            networks = i.get('network', [])
+            products = i.get('product', [])
+        if i.get('source', '') == 'processoutBinlookup':
+            if not issuer:
+                issuer = i.get('issuer', None)
+            if not country:
+                country = i.get('country', None)
+            if not card_type:
+                card_type = i.get('card_type', None)
+            if not card_category:
+                card_category = i.get('card_category', None)
+            if not product_category:
+                product_category = i.get('product_category', None)
+        if i.get('source', '') == 'enduranceBinlookup':
+            if i.get('product_category', None):
+                product_category = i.get('product_category', None)
+        temp_card_bin = i.get('card_bin', '')
+        if len(temp_card_bin)>len(card_bin):
+            card_bin = temp_card_bin
+    return {
+        'issuer': issuer,
+        'card_bin': card_bin,
+        'country': country,
+        'card_type': card_type,
+        'card_category': card_category,
+        'product_category': product_category,
+        'networks': networks,
+        'products': products,
+        'cvc_mandatory': cvc_mandatory
+    }
+
+
+def tinsert(gmodelo, url_base):
+    url_issuer = f'{url_base}bin/create_issuer'
+    payload_issuer = {
+        "country": gmodelo.get('country'),
+        "name": gmodelo.get("issuer")
+    }
+    id_issuer = None
+    r_issuer = requests.post(url_issuer, json=payload_issuer)
+    if r_issuer.status_code == 200:
+        id_issuer = r_issuer.json().get('data', {}).get('id', None)
+    if id_issuer:
+        url_bin = f'{url_base}bin/create_bin'
+        payload_bin = {
+            "id_issuer": id_issuer,
+            "card_bin": gmodelo.get("card_bin"),
+            "card_type": gmodelo.get("card_type"),
+            "card_category": gmodelo.get("card_category"),
+            "product_category": gmodelo.get("product_category"),
+            'cvc_mandatory': gmodelo.get('cvc_mandatory')
+        }
+        id_bin = None
+        r_bin = requests.post(url_bin, json=payload_bin)
+        if r_bin.status_code == 200:
+            id_bin = r_bin.json().get('data', {}).get('id', None)
+        if id_bin:
+            for i in gmodelo.get('networks', []):
+                url_c_n = f'{url_base}bin/create_network'
+                payload_c_n = {
+                    'name': i
+                }
+                r_c_n = requests.post(url_c_n, json=payload_c_n)
+                if r_c_n.status_code == 200:
+                    id_network = r_c_n.json().get('data', {}).get('id', None)
+                    if id_network:
+                        url_cb_n = f'{url_base}bin/create_bin_network'
+                        payload_cb_n = {
+                            'id_bin': id_bin,
+                            'id_network': id_network
+                        }
+                        r_cb_n = requests.post(url_cb_n, json=payload_cb_n)
+            for i in gmodelo.get('products', []):
+                url_c_n = f'{url_base}bin/create_product'
+                payload_c_n = {
+                    'name': i
+                }
+                r_c_n = requests.post(url_c_n, json=payload_c_n)
+                if r_c_n.status_code == 200:
+                    id_network = r_c_n.json().get('data', {}).get('id', None)
+                    if id_network:
+                        url_cb_n = f'{url_base}bin/create_bin_product'
+                        payload_cb_n = {
+                            'id_bin': id_bin,
+                            'id_product': id_network
+                        }
+                        r_cb_n = requests.post(url_cb_n, json=payload_cb_n)
+
+
+
+
+url_base = 'http://127.0.0.1:55100/'
+
+
+
+cc = '4092800160958454|12|28|195'
+cb = checkoutBinlookup()
+eb = enduranceBinlookup()
+bb = boooothPOP(timeout=5)
+pb = processoutBinlookup()
+sf = saferpay()
+
+m = mng(cb_instance=cb, eb_instance=eb, pb_instance=pb, bb_instance=bb, cvv_instance=sf)
+
+rm = m.check(ccs[n])
+
+print(json.dumps(m.model(), indent=4))
+
+mr = m.model()
+
+rg = gmodel(mr)
+
+tinsert(gmodelo=rg, url_base=url_base)
+
+def doit(cc_use):
+    trm = m.check(cc_use)
+    if trm:
+        tmr = m.model()
+        if tmr:
+            trg = gmodel(tmr)
+            if trg:
+                print(trg)
+                tinsert(gmodelo=trg, url_base=url_base)
+
+    rm = m.check(cc)
+
+
+for i in ccs[1:100]:
+    try:
+        doit(i)
+    except Exception as err:
+        print(f'exp {i} --- {err}')
+
+
+with open('/home/dockremap/opa/pepper.txt', 'r') as f:
+    data = f.read()
