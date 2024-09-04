@@ -28,6 +28,12 @@ class TransactionAdd(TransactionBase):
     id_card: str
 
 
+class TransactionQuery(TransactionBase):
+    id_gateway: Optional[str] = None
+    id_card: Optional[str] = None
+
+
+
 class TransactionCreate(baseSchema):
     id_gateway: str
     id_card: str

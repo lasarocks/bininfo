@@ -2,9 +2,12 @@ from pydantic import Field
 from datetime import datetime
 from app.models.schemas.base import baseSchema
 
-from typing import Optional, List
+from typing import Optional, List, Dict
 from uuid import UUID
 
+from app.models.schemas.sapi import(
+    baseAPIResponse
+)
 
 
 
@@ -16,8 +19,10 @@ class binIssuersAdd(baseSchema):
 
 
 
+
+
+
 class binIssuersAddResponse(binIssuersAdd):
-    #id: UUID
     id: int
     date_created: datetime
 
@@ -27,9 +32,7 @@ class binIssuersListAllResponse(baseSchema):
 
 
 
-class binnerAdd(baseSchema):
-    #id_issuer: str
-    id_issuer: int
+class binnerBase(baseSchema):
     card_bin: str
     card_type: Optional[str] = None
     card_category: Optional[str] = None
@@ -37,6 +40,29 @@ class binnerAdd(baseSchema):
     cvc_mandatory: Optional[bool] = None
 
 
+class binnerAdd(binnerBase):
+    id_issuer: int
+
+
+
+class binInformationBase(baseSchema):
+    has_cvc: Optional[bool] = None
+    cvc_mandatory: Optional[bool] = None
+
+
+class binInformationAdd(binInformationBase):
+    id_bin: int
+
+
+
+
+
+
+
+
+class binInformationAddResponse(binInformationAdd):
+    id: int
+    date_created: datetime
 
 
 
@@ -45,8 +71,10 @@ class CardNetworkAdd(baseSchema):
     description: Optional[str] = None
 
 
+
+
+
 class CardNetworkAddResponse(CardNetworkAdd):
-    #id: UUID
     id: int
     date_created: datetime
 
@@ -63,7 +91,6 @@ class CardProductAdd(baseSchema):
 
 
 class CardProductAddResponse(CardProductAdd):
-    #id: UUID
     id: int
     date_created: datetime
 
@@ -76,14 +103,11 @@ class CardProductListAllResponse(baseSchema):
 
 
 class binNetworkAdd(baseSchema):
-    #id_bin: str
     id_bin: int
-    #id_network: str
     id_network: int
 
 
 class binNetworkAddResponse(binNetworkAdd):
-    #id: UUID
     id: int
     date_created: datetime
     networks: CardNetworkAddResponse
@@ -91,14 +115,11 @@ class binNetworkAddResponse(binNetworkAdd):
 
 
 class binProductAdd(baseSchema):
-    #id_bin: str
     id_bin: int
-    #id_product: str
     id_product: int
 
 
 class binProductAddResponse(binProductAdd):
-    #id: UUID
     id: int
     date_created: datetime
     products: CardProductAddResponse
@@ -108,13 +129,34 @@ class binProductAddResponse(binProductAdd):
 
 
 class binnerAddResponse(binnerAdd):
-    #id: UUID
     id: int
     date_created: datetime
     binIssuers: binIssuersAddResponse
     bin_networks: List[binNetworkAddResponse]
     products: List[binProductAddResponse]
+    bin_information: List[binInformationAddResponse]
 
 
 class binnerListAllResponse(baseSchema):
     data: List[binnerAddResponse]
+
+
+class binUnico(baseSchema):
+    issuer: binIssuersAdd
+    bin_data: binnerBase
+    bin_information: binInformationBase
+    card_network: List[CardNetworkAdd]
+    card_product: List[CardProductAdd]
+
+
+
+class binUnicoResponseData(baseSchema):
+    issuer: binIssuersAddResponse
+    bin: binnerAdd
+    cvc: binInformationAddResponse
+    network: CardNetworkListAllResponse
+    product: CardProductListAllResponse
+
+
+class binUnicoResponse(baseAPIResponse):
+    data: binUnicoResponseData

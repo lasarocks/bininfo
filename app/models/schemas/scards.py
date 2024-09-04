@@ -14,6 +14,11 @@ from app.utils.cchelper import(
     formatar_cc
 )
 
+from app.models.schemas.sbinna import(
+    binnerAdd,
+    binnerAddResponse,
+)
+
 
 
 class CardAdd(baseSchema):
@@ -30,10 +35,30 @@ class CardAdd(baseSchema):
 
 
 
+class CardQuery(baseSchema):
+    id: Optional[str] = None
+    card_bin: Optional[str] = None
+    card_number: Optional[str] = None
+    card_exp_month: Optional[str] = None
+    card_exp_year: Optional[str] = None
+    card_cvv: Optional[str] = None
+    last_status: Optional[str] = None
+    last_gateway_id: Optional[str] = None
+    source: Optional[str] = None
+
+
+
 class CardAddResponse(CardAdd):
     id: UUID
     date_created: datetime
 
+class c000(CardAddResponse):
+    bin_data: List[binnerAddResponse]
+
+
+
+class c000List(baseSchema):
+    data: List[c000]
 
 
 class CardRAW(baseSchema):
