@@ -45,7 +45,8 @@ from app.models.schemas.stransactions import(
     TransactionAdd,
     TransactionCreate,
     TransactionAddResponse,
-    TransactionsResponse
+    TransactionsResponse,
+    TransactionQuery
 )
 
 
@@ -97,11 +98,18 @@ class Transactions(CRUUIDBase, Base):
     def list_transactions_limit(
         cls: Type[Base],
         session: Session,
+        data_query: TransactionQuery,
         offset: int = 0,
         limit: int = 15
     ):
         try:
-            return session.query(cls).offset(offset).limit(limit).all()
+            select = session.query(cls)
+            set_query = data_query.__fields_set__
+            if 'status' in set_query:
+                select = select.filter_by(status=data_query.status)
+            if 'id_card' in set_query:
+                select = select.filter_by(id_card=data_query.id_card)
+            return select.offset(offset).limit(limit).all()
         except Exception as err:
             raise InternalException(
                 message=f'Internal Error list_transactions_limit offset --- {offset} --- limit --- {limit} --- {err}'

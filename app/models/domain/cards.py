@@ -45,6 +45,7 @@ from app.models.schemas.scards import(
     CardAdd,
     CardAddResponse,
     CardRAW,
+    CardQuery
 )
 
 
@@ -61,6 +62,7 @@ class cards(CRUUIDBase, Base):
     source = Column(String(255))
     transactions = relationship('Transactions', backref='cards')
     date_created = Column(DateTime, default=datetime.utcnow())
+    bin_data = relationship('binners', backref='cards')
 
     @classmethod
     def create(
@@ -115,3 +117,109 @@ class cards(CRUUIDBase, Base):
         except Exception as err:
             print(f'cards.find_by_card exp -- {err}')
         return False
+
+    @classmethod
+    def list_cards_query(
+        cls: Type[Base],
+        session: Session,
+        data_query: CardQuery,
+        offset: int = 0,
+        limit: int = 15
+    ):
+        try:
+            select = session.query(cls)
+            set_query = data_query.__fields_set__
+            if 'last_status' in set_query:
+                select = select.filter_by(last_status=data_query.last_status)
+            if 'id' in set_query:
+                select = select.filter_by(id=data_query.id)
+            if 'card_bin' in set_query:
+                select = select.filter_by(card_bin=data_query.card_bin)
+            if 'card_number' in set_query:
+                select = select.filter_by(card_number=data_query.card_number)
+            if 'source' in set_query:
+                select = select.filter_by(source=data_query.source)
+            return select.offset(offset).limit(limit).all()
+        except Exception as err:
+            raise InternalException(
+                message=f'Internal Error list_transactions_limit offset --- {offset} --- limit --- {limit} --- {err}'
+            )
+        return False
+
+
+
+
+
+
+# class cardInformationType(CRUUIDSerial, Base):
+#     __tablename__ = "cardInformationType"
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     name = Column(String(255), unique=True)
+#     description = Column(String(255))
+
+
+
+#     id_card = Column(String(36), ForeignKey('cards.id'))
+#     has_vbv = Column(Boolean)
+#     cvc_mandatory = Column(Boolean)
+
+
+
+# class cardInformation(CRUUIDSerial, Base):
+#     __tablename__ = "cardInformation"
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     id_card = Column(String(36), ForeignKey('cards.id'))
+#     id_card_information_type = Column(Integer, ForeignKey('cardInformationType.id'))
+#     content = Column(???)
+#     #cvc_mandatory = Column(Boolean)
+#     date_created = Column(DateTime, default=datetime.utcnow())
+
+#     @classmethod
+#     def create(
+#         cls: Type[Base],
+#         session: Session,
+#         data: binInformationAdd
+#     ):
+#         response_bin = binners.find_by_id(session=session, id=data.id_bin)
+#         if not response_bin:
+#             msg_404 = f'Bin id {data.id_bin} not found'
+#             raise InternalException(
+#                 message=msg_404
+#             )
+#         try:
+#             response_check_exists = binInformation.find_by_bin_id(session=session, id_bin=data.id_bin)
+#             if not response_check_exists:
+#                 response_check_exists = super().create(session, data=data.dict())
+#             return response_check_exists
+#         except Exception as err:
+#             print(f'binInformation.create exp --- {err}')
+#         return False
+
+#     @classmethod
+#     def find_by_name(
+#         cls: Type[Base],
+#         session: Session,
+#         name: str
+#     ):
+#         try:
+#             return session.query(cls).filter_by(name=name).first()
+#         except Exception as err:
+#             raise InternalException(
+#                 message=f'Internal Error find_by_name NAME --- {name} --- {err}'
+#             )
+#         return False
+
+#     @classmethod
+#     def find_by_bin_id(
+#         cls: Type[Base],
+#         session: Session,
+#         id_bin: int
+#     ):
+#         try:
+#             return session.query(cls).filter_by(id_bin=id_bin).first()
+#         except Exception as err:
+#             raise InternalException(
+#                 message=f'Internal Error find_by_bin_id id_bin --- {id_bin} --- {err}'
+#             )
+#         return False
+

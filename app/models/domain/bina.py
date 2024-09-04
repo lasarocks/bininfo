@@ -54,7 +54,9 @@ from app.models.schemas.sbinna import(
     CardProductAdd,
     CardProductAddResponse,
     binProductAdd,
-    binProductAddResponse
+    binProductAddResponse,
+    binInformationAdd,
+    binInformationAddResponse
 )
 
 
@@ -63,7 +65,7 @@ class binIssuers(CRUUIDSerial, Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     #id = Column(String(36), primary_key=True)
     country = Column(String(255))
-    name = Column(String(255), unique=True)
+    name = Column(String(255))
     name_alternative = Column(String(255))
     date_created = Column(DateTime, default=datetime.utcnow())
     bins = relationship('binners', backref='binIssuers')
@@ -75,7 +77,7 @@ class binIssuers(CRUUIDSerial, Base):
         data: binIssuersAdd
     ):
         try:
-            response_check_exists = binIssuers.find_by_name(session=session, name=data.name)
+            response_check_exists = binIssuers.find_by_name_and_cn(session=session, data=data)
             if not response_check_exists:
                 response_check_exists = super().create(session, data=data.dict())
             return response_check_exists
@@ -97,6 +99,26 @@ class binIssuers(CRUUIDSerial, Base):
         except Exception as err:
             raise InternalException(
                 message=f'Internal Error find_by_name NAME --- {name} --- {err}'
+            )
+        return False
+
+    @classmethod
+    def find_by_name_and_cn(
+        cls: Type[Base],
+        session: Session,
+        data: binIssuersAdd
+    ):
+        try:
+            return session.query(
+                cls
+            ).filter(
+                binIssuers.name == data.name,
+                binIssuers.country == data.country
+            ).first()
+            #return session.query(cls).filter_by(name=name).first()
+        except Exception as err:
+            raise InternalException(
+                message=f'Internal Error find_by_name_and_cn  --- {data.dict()} --- {err}'
             )
         return False
 
@@ -293,14 +315,70 @@ class binProducts(CRUUIDSerial, Base):
 
 
 
+class binInformation(CRUUIDSerial, Base):
+    __tablename__ = "binInformation"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    id_bin = Column(Integer, ForeignKey('binners.id'))
+    has_cvc = Column(Boolean)
+    cvc_mandatory = Column(Boolean)
+    date_created = Column(DateTime, default=datetime.utcnow())
+
+    @classmethod
+    def create(
+        cls: Type[Base],
+        session: Session,
+        data: binInformationAdd
+    ):
+        response_bin = binners.find_by_id(session=session, id=data.id_bin)
+        if not response_bin:
+            msg_404 = f'Bin id {data.id_bin} not found'
+            raise InternalException(
+                message=msg_404
+            )
+        try:
+            response_check_exists = binInformation.find_by_bin_id(session=session, id_bin=data.id_bin)
+            if not response_check_exists:
+                response_check_exists = super().create(session, data=data.dict())
+            return response_check_exists
+        except Exception as err:
+            print(f'binInformation.create exp --- {err}')
+        return False
+
+    @classmethod
+    def find_by_name(
+        cls: Type[Base],
+        session: Session,
+        name: str
+    ):
+        try:
+            return session.query(cls).filter_by(name=name).first()
+        except Exception as err:
+            raise InternalException(
+                message=f'Internal Error find_by_name NAME --- {name} --- {err}'
+            )
+        return False
+
+    @classmethod
+    def find_by_bin_id(
+        cls: Type[Base],
+        session: Session,
+        id_bin: int
+    ):
+        try:
+            return session.query(cls).filter_by(id_bin=id_bin).first()
+        except Exception as err:
+            raise InternalException(
+                message=f'Internal Error find_by_bin_id id_bin --- {id_bin} --- {err}'
+            )
+        return False
+
+
 
 class binners(CRUUIDSerial, Base):
     __tablename__ = "binners"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    #id = Column(String(36), primary_key=True)
-    #id_issuer = Column(String(36), ForeignKey('binIssuers.id'))
     id_issuer = Column(Integer, ForeignKey('binIssuers.id'))
-    card_bin = Column(String(255))
+    card_bin = Column(String(255), ForeignKey('cards.card_bin'))
     card_type = Column(String(255))
     card_category = Column(String(255))
     product_category = Column(String(255))
@@ -308,6 +386,7 @@ class binners(CRUUIDSerial, Base):
     date_created = Column(DateTime, default=datetime.utcnow())
     bin_networks = relationship('binNetworks', backref='binners')
     products = relationship('binProducts', backref='binners')
+    bin_information = relationship('binInformation', backref='binners')
 
     @classmethod
     def create(
@@ -339,3 +418,27 @@ class binners(CRUUIDSerial, Base):
         except Exception as err:
             print(f'binners.find_by_card_bin exp -- {err}')
         return False
+
+    @classmethod
+    def find_bin(
+        cls: Type[Base],
+        session: Session,
+        card_number: str
+    ):
+        try:
+            card_bin_query = card_number[0:6]
+            response = session.query(
+                cls
+            ).filter(
+                binners.card_bin.like(f'{card_bin_query}%')
+            ).all()
+        except Exception as err:
+            print(f'binners.find_bin exp -- {err}')
+        else:
+            if response:
+                for row in response:
+                    if row.card_bin == card_number[0:len(row.card_bin)]:
+                        return row
+        return False
+
+
