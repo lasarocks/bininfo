@@ -21,9 +21,13 @@ from app.models.domain.bina import(
     CardNetwork,
     binNetworks,
     CardProduct,
-    binProducts
+    binProducts,
+    binInformation
 )
 
+from app.models.schemas.sapi import(
+    baseAPIResponse
+)
 
 
 from app.models.schemas.sbinna import(
@@ -42,7 +46,12 @@ from app.models.schemas.sbinna import(
     CardProductAddResponse,
     CardProductListAllResponse,
     binProductAdd,
-    binProductAddResponse
+    binProductAddResponse,
+    binInformationAdd,
+    binInformationAddResponse,
+    binUnico,
+    binUnicoResponse,
+    binUnicoResponseData
 )
 
 
@@ -63,6 +72,79 @@ import json
 
 
 router = APIRouter()
+
+
+@router.post(
+    '/create_special',
+    status_code=status.HTTP_200_OK
+)
+def create_special(
+    data: binUnico,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    # return {
+    #     "data": data
+    # }
+    try:
+        response_issuer = binIssuers.create(session=db, data=data.issuer)
+        if response_issuer:
+            bin_data = binnerAdd(id_issuer=response_issuer.id, **data.bin_data.dict())
+            response_bin = binners.create(session=db, data=bin_data)
+            if response_bin:
+                bin_information_data = binInformationAdd(id_bin=response_bin.id, **data.bin_information.dict())
+                response_info = binInformation.create(session=db, data=bin_information_data)
+                network_responses = []
+                for network in data.card_network:
+                    response_new_network = CardNetwork.create(session=db, data=network)
+                    if response_new_network:
+                        bin_new_network = binNetworkAdd(id_bin=response_bin.id, id_network=response_new_network.id)
+                        response_new_bin_network = binNetworks.create(session=db, data=bin_new_network)
+                        if response_new_bin_network:
+                            network_responses.append(response_new_network)
+                product_responses = []
+                for product in data.card_product:
+                    response_new_product = CardProduct.create(session=db, data=product)
+                    if response_new_product:
+                        bin_new_product = binProductAdd(id_bin=response_bin.id, id_product=response_new_product.id)
+                        response_new_bin_product = binProducts.create(session=db, data=bin_new_product)
+                        if response_new_bin_product:
+                            product_responses.append(response_new_product)
+                if response_info:
+                    binunico_data = binUnicoResponseData(
+                        issuer=binIssuersAddResponse.from_orm(response_issuer),
+                        bin=binnerAdd.from_orm(response_bin),
+                        cvc=binInformationAddResponse.from_orm(response_info),
+                        network=CardNetworkListAllResponse(data=network_responses),
+                        product=CardProductListAllResponse(data=product_responses)
+                    )
+                    binunico_response = binUnicoResponse(error=False, message=None, data=binunico_data)
+                    return binunico_response
+                    return {
+                        "error": False,
+                        "message": None,
+                        "data": {
+                            "issuer": binIssuersAddResponse.from_orm(response_issuer),
+                            "bin": binnerAdd.from_orm(response_bin),
+                            "cvc": binInformationAddResponse.from_orm(response_info),
+                            "network": CardNetworkListAllResponse(data=network_responses),
+                            "product": CardProductListAllResponse(data=product_responses)
+                        }
+                    }
+            print(bin_data)
+    except InternalException as err_int:
+        raise err_int
+    except Exception as err:
+        return {
+            "error": True,
+            "message": f'EXCEPTION ON create-binIssuers -- {err}',
+            "data": {}
+        }
+    return {
+        "error": False,
+        "message": None,
+        "data": binIssuersAddResponse.from_orm(response_issuer) or []
+    }
 
 
 
@@ -314,4 +396,56 @@ def create_bin_product(
         "error": False,
         "message": None,
         "data": binProductAddResponse.from_orm(response) or []
+    }
+
+
+
+@router.post(
+    '/set_cvc_information',
+    status_code=status.HTTP_200_OK
+)
+def set_cvc_information(
+    data: binInformationAdd,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    response = None
+    try:
+        response = binInformation.create(session=db, data=data)
+    except InternalException as err_int:
+        raise err_int
+    except Exception as err:
+        return {
+            "error": True,
+            "message": f'EXCEPTION ON set_cvc_information -- {err}',
+            "data": {}
+        }
+    return {
+        "error": False,
+        "message": None,
+        "data": binInformationAddResponse.from_orm(response) or []
+    }
+
+
+@router.get(
+    '/find_card_bin/{card_number}',
+    status_code=status.HTTP_200_OK
+)
+def find_card_bin(
+    card_number: str,
+    db: Session = Depends(get_db)
+):
+    response = None
+    try:
+        response = binners.find_bin(session=db, card_number=card_number)
+    except Exception as err:
+        return {
+            "error": True,
+            "message": f'EXCEPTION ON find_card_bin -- {err}',
+            "data": {}
+        }
+    return {
+        "error": False,
+        "message": None,
+        "data": binnerAddResponse.from_orm(response) if response else response
     }
