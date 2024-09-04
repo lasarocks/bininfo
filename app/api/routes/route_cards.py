@@ -25,7 +25,10 @@ from app.models.schemas.scards import(
     CardAdd,
     CardAddResponse,
     CardRAW,
-    CardsListAllResponse
+    CardsListAllResponse,
+    c000,
+    c000List,
+    CardQuery
 )
 
 
@@ -101,5 +104,32 @@ def list(
     return {
         "error": False,
         "message": None,
-        "data": CardsListAllResponse(data=response) or []
+        "data": c000List(data=response) or []
+    }
+
+
+
+@router.post(
+    '/list_query',
+    status_code=status.HTTP_200_OK
+)
+def list_query(
+    data_query: CardQuery,
+    offset: int = 0,
+    limit: int = 15,
+    db: Session = Depends(get_db)
+):
+    response = None
+    try:
+        response = cards.list_cards_query(session=db, data_query=data_query, offset=offset, limit=limit)
+    except Exception as err:
+        return {
+            "error": True,
+            "message": f'EXCEPTION ON list_query-cards -- {err}',
+            "data": {}
+        }
+    return {
+        "error": False,
+        "message": None,
+        "data": c000List(data=response) or []
     }

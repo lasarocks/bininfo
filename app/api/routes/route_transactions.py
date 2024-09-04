@@ -13,15 +13,6 @@ from fastapi.responses import JSONResponse
 
 from app.core.database import get_db, SessionLocal
 
-from app.models.domain.ccsystem import(
-    #cards,
-    #Gateways,
-    #Transactions,
-    binsPaypal1,
-    binsProcessout,
-    binsCheckout,
-    binsEndurance
-)
 
 from app.models.domain.cards import(
     cards
@@ -54,7 +45,9 @@ from app.models.schemas.stransactions import(
     TransactionCreate,
     TransactionAddResponse,
     TransactionsResponse,
-    TransactionsResponse2
+    TransactionsResponse2,
+    TransactionBase,
+    TransactionQuery
 )
 
 
@@ -158,3 +151,70 @@ def list(
         "data": TransactionsResponse2(data=response) or []
     }
 
+
+
+
+@router.patch(
+    '/pay/{id}',
+    status_code=status.HTTP_200_OK
+)
+def pay(
+    id: str,
+    data_payment: TransactionBase,
+    db: Session = Depends(get_db)
+):
+    response = None
+    try:
+        response = Transactions.find_by_id(session=db, id=id)
+        if response:
+            response.amount = data_payment.amount
+            response.currency = data_payment.currency
+            response.status = data_payment.status
+            response.response = data_payment.response
+            response.response_raw = data_payment.response_raw
+            response.cards.last_status = data_payment.status
+            response.cards.last_gateway_id = response.id_gateway
+            rs = response.update(session=db)
+            return {
+                'error': False,
+                'message': None,
+                'data': TransactionAddResponse.from_orm(response)
+            }
+    except Exception as err:
+        return {
+            "error": True,
+            "message": f'EXCEPTION ON pay-transactions -- {err}',
+            "data": {}
+        }
+    return {
+        "error": False,
+        "message": None,
+        "data": None
+    }
+
+
+
+@router.post(
+    '/list_query',
+    status_code=status.HTTP_200_OK
+)
+def list_query(
+    data_query: TransactionQuery,
+    offset: int = 0,
+    limit: int = 15,
+    db: Session = Depends(get_db)
+):
+    response = None
+    try:
+        response = Transactions.list_transactions_limit(session=db, data_query=data_query, offset=offset, limit=limit)
+    except Exception as err:
+        return {
+            "error": True,
+            "message": f'EXCEPTION ON list_all-transactions -- {err}',
+            "data": {}
+        }
+    return {
+        "error": False,
+        "message": None,
+        "data": TransactionsResponse2(data=response) or []
+    }
