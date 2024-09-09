@@ -433,19 +433,22 @@ def set_cvc_information(
 )
 def find_card_bin(
     card_number: str,
+    response: Response,
     db: Session = Depends(get_db)
 ):
-    response = None
     try:
-        response = binners.find_bin(session=db, card_number=card_number)
+        response_query = binners.find_bin(session=db, card_number=card_number)
     except Exception as err:
         return {
             "error": True,
             "message": f'EXCEPTION ON find_card_bin -- {err}',
             "data": {}
         }
+    else:
+        if not response_query:
+            response.status_code = status.HTTP_404_NOT_FOUND
     return {
         "error": False,
         "message": None,
-        "data": binnerAddResponse.from_orm(response) if response else response
+        "data": binnerAddResponse.from_orm(response_query) if response_query else response_query
     }

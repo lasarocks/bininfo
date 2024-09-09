@@ -80,7 +80,7 @@ def add_card(
     return {
         "error": False,
         "message": None,
-        "data": CardAddResponse.from_orm(response) or {}
+        "data": c000.from_orm(response) or {}
     }
 
 
