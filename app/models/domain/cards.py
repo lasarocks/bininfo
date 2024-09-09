@@ -134,7 +134,10 @@ class cards(CRUUIDBase, Base):
             if 'id' in set_query:
                 select = select.filter_by(id=data_query.id)
             if 'card_bin' in set_query:
-                select = select.filter_by(card_bin=data_query.card_bin)
+                #select = select.filter_by(card_bin=data_query.card_bin)
+                select = select.filter(
+                    cards.card_bin.like(f'{data_query.card_bin}%')
+                )
             if 'card_number' in set_query:
                 select = select.filter_by(card_number=data_query.card_number)
             if 'source' in set_query:
