@@ -185,7 +185,6 @@ def fmt_cc(cc_string, printable=False):
                     )
                 else:
                     print(f'invalid month len --- {cc_item}')
-                    break
             elif has_find_year is False:
                 if len(cc_item) in (2, 4):
                     if 'X' not in cc_item:
@@ -212,12 +211,11 @@ def fmt_cc(cc_string, printable=False):
                     )
                 else:
                     print(f'invalid year len --- {cc_item}')
-                    break
             elif has_find_cvv is False:
                 if len(cc_item) in (3, 4):
                     if 'X' not in cc_item:
                         temp_cvv = str2int(cc_item)
-                        if not temp_cvv:
+                        if not isinstance(temp_cvv, int):
                             print(f'invalid cvv -- failed convert {cc_item} to int')
                             break
                     has_find_cvv = True
