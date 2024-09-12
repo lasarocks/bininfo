@@ -58,8 +58,6 @@ class Transactions(CRUUIDBase, Base):
     id = Column(String(36), primary_key=True)
     id_gateway = Column(String(36), ForeignKey('Gateways.id'))
     id_card = Column(String(36), ForeignKey('cards.id'))
-    #id_card = Column(String(36), nullable=False)
-    #id_gateway = Column(String(36), nullable=False)
     amount = Column(String(255))
     currency = Column(String(255))
     status = Column(String(255))
@@ -109,6 +107,8 @@ class Transactions(CRUUIDBase, Base):
                 select = select.filter_by(status=data_query.status)
             if 'id_card' in set_query:
                 select = select.filter_by(id_card=data_query.id_card)
+            if 'date_start' in set_query:
+                select = select.filter(Transactions.date_created >= data_query.date_start)
             return select.offset(offset).limit(limit).all()
         except Exception as err:
             raise InternalException(
