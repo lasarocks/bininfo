@@ -6,7 +6,8 @@ from typing import Optional, List
 from uuid import UUID
 
 from app.models.schemas.scards import(
-    CardAddResponse
+    CardAddResponse,
+    c000
 )
 
 from app.models.schemas.sgateways import(
@@ -62,7 +63,7 @@ class TransactionsResponse(baseSchema):
 
 class TransactionRT2(TransactionAddResponse):
     Gateways: GatewayAddResponse
-    cards: CardAddResponse
+    cards: c000
 
 
 class TransactionsResponse2(baseSchema):
