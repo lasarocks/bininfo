@@ -1,5 +1,5 @@
-from pydantic import Field
-from datetime import datetime
+from pydantic import Field, validator
+from datetime import datetime, date
 from app.models.schemas.base import baseSchema
 
 from typing import Optional, List
@@ -32,6 +32,27 @@ class TransactionAdd(TransactionBase):
 class TransactionQuery(TransactionBase):
     id_gateway: Optional[str] = None
     id_card: Optional[str] = None
+    date_start: Optional[str] = Field(
+        title='Minimum Date',
+        description='Set minimum query value datetime',
+        examples=[
+            'MM-DD-YYYY HH:MM:SS'
+        ],
+        default=None
+    )
+    date_end: Optional[str] = Field(
+        title='Maximum Date',
+        description='Set maximum query value datetime',
+        examples=[
+            'MM-DD-YYYY HH:MM:SS'
+        ]
+    )
+    @validator('date_start')
+    def parse_date_start(cls, v):
+        return datetime.strptime(v, '%m-%d-%Y %H:%M:%S')
+
+
+
 
 
 
