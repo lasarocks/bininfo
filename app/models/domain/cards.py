@@ -110,10 +110,10 @@ class cards(CRUUIDBase, Base):
             ).filter(
                 #cards.card_bin == card_data.card_bin,
                 cards.card_number == card_data.card_number,
-                cards.card_exp_month == card_data.card_exp_month,
-                cards.card_exp_year == card_data.card_exp_year,
-                cards.card_cvv == card_data.card_cvv
-            ).one()
+                #cards.card_exp_month == card_data.card_exp_month,
+                #cards.card_exp_year == card_data.card_exp_year,
+                #cards.card_cvv == card_data.card_cvv
+            ).first()
         except Exception as err:
             print(f'cards.find_by_card exp -- {err}')
         return False
